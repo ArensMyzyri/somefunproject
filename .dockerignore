@@ -1,0 +1,13 @@
+.git
+.gitignore
+var/
+vendor/
+tests/
+mock-hr-api/state.json
+.env.local
+.env.*.local
+docker-compose.override.yaml
+compose.override.yaml
+*.md
+.idea
+.vscode

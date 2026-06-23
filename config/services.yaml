@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+# See also https://symfony.com/doc/current/service_container/import.html
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+    # Credentials for the mock HR API. In a real deployment these would come from
+    # the environment / a secrets store — they are inlined here only to keep setup
+    # to a single `composer install`.
+    hr_api.base_url: '%env(HR_API_BASE_URL)%'
+    hr_api.token: '%env(HR_API_TOKEN)%'
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+
+    # HR API client — bind the connection details defined above.
+    App\Hr\HrApiClient:
+        arguments:
+            $baseUrl: '%hr_api.base_url%'
+            $token: '%hr_api.token%'
+
+    # Let the processor depend on the interface; the real client satisfies it.
+    App\Hr\HrApiClientInterface: '@App\Hr\HrApiClient'
+
+    # Public-holiday lookup behind an interface, so a real holiday service can be
+    # swapped in without touching the working-day counter.
+    App\Service\PublicHolidayProviderInterface: '@App\Service\PublicHolidayProvider'
+
+    # Domain services bound to their interfaces, so consumers depend on abstractions.
+    App\Service\WorkingDayCounterInterface: '@App\Service\WorkingDayCounter'
+    App\Service\EntitlementCalculatorInterface: '@App\Service\EntitlementCalculator'
+    App\Service\LeaveRequestProcessorInterface: '@App\Service\LeaveRequestProcessor'
+
+    # Write-side repository bound to its interface, so consumers depend on the abstraction.
+    # (Reads use the query bus, whose handlers query the EntityManager directly.)
+    App\Repository\LeaveBalanceRepositoryInterface: '@App\Repository\LeaveBalanceRepository'
+
+    # Command/query bus facade over Messenger ($command->execute() / $query->ask()).
+    App\Bus\CommandBusInterface: '@App\Bus\MessengerCommandBus'
+    App\Bus\QueryBusInterface: '@App\Bus\MessengerQueryBus'

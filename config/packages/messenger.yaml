@@ -1,0 +1,26 @@
+framework:
+    messenger:
+        default_bus: command.bus
+        buses:
+            command.bus: ~
+            query.bus: ~
+
+        # Uncomment this (and the failed transport below) to send failed messages to this transport for later handling.
+        # failure_transport: failed
+
+        transports:
+            # https://symfony.com/doc/current/messenger.html#transport-configuration
+            async: '%env(MESSENGER_TRANSPORT_DSN)%'
+            # failed: 'doctrine://default?queue_name=failed'
+            sync: 'sync://'
+
+        routing:
+            # Each pending leave request is processed as its own queued unit of work.
+            App\Message\Command\ProcessLeaveRequest: async
+
+# Process the per-request message inline (no worker / no DB transport) in tests.
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: 'sync://'

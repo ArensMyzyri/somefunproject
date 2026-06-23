@@ -1,0 +1,65 @@
+
+# Shared environment for the app/worker containers: reach the database and HR mock by
+# their service names on the compose network, and auto-create the Messenger table.
+x-app-env: &app-env
+  DATABASE_URL: "postgresql://app:!ChangeMe!@database:5432/app?serverVersion=16&charset=utf8"
+  HR_API_BASE_URL: "http://hr-api:8081"
+  MESSENGER_TRANSPORT_DSN: "doctrine://default"
+
+services:
+  # The Symfony app. Kept alive so console commands run via `docker compose exec app …`.
+  app:
+    build: .
+    depends_on:
+      database:
+        condition: service_healthy
+    environment: *app-env
+    volumes:              
+      - ./:/app
+    command: ["tail", "-f", "/dev/null"]
+
+  # Single ordered Messenger worker that decides each queued leave request.
+  worker:
+    build: .
+    depends_on:
+      database:
+        condition: service_healthy
+    environment: *app-env
+    command: ["php", "bin/console", "messenger:consume", "async", "-vv"]
+    restart: unless-stopped
+
+  # Bundled mock HR API, reachable on the network at http://hr-api:8081.
+  hr-api:
+    build: .
+    environment: *app-env
+    command: ["php", "-S", "0.0.0.0:8081", "mock-hr-api/server.php"]
+    ports:
+      - "8081:8081"
+
+###> doctrine/doctrine-bundle ###
+  database:
+    image: postgres:${POSTGRES_VERSION:-16}-alpine
+    # Publish the port to the host so Windows tools (psql, pgAdmin, DBeaver) can
+    # connect at 127.0.0.1:5432. A fixed mapping is required for WSL2 to forward it too.
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      # You should definitely change the password in production
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB:-app}", "-U", "${POSTGRES_USER:-app}"]
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    volumes:
+      - database_data:/var/lib/postgresql/data:rw
+      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
+      # - ./docker/db/data:/var/lib/postgresql/data:rw
+###< doctrine/doctrine-bundle ###
+
+volumes:
+###> doctrine/doctrine-bundle ###
+  database_data:
+###< doctrine/doctrine-bundle ###

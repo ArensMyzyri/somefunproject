@@ -1,0 +1,2 @@
+# Local development overrides.
+# The database port is published from compose.yaml (host access at 127.0.0.1:5432).

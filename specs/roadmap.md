@@ -1,0 +1,22 @@
+# The Absence Run — Product Roadmap
+
+## Vision
+The Absence Run is a nightly batch job that closes out pending leave requests for a pay period: for every request awaiting a decision it determines, accurately and in line with the company's leave policy, whether to approve or reject it, keeps each employee's leave balance correct, and files the decision with the HR system. The goal is a job an operator can trust to run unattended — one that makes the same decision a careful HR administrator would, can be re-run safely after a hiccup, and leaves a clear record of what it did.
+
+## Phase 1 — Correct by the Policy
+By the end of this phase, an operator can run the job for a given period and trust that each decision reflects how leave is actually counted. Requests are measured in true working days — weekends and the employee's regional public holidays don't count, and half-days are honoured — and each employee's available leave reflects their real entitlement, including reduced allowances for part-time staff and for people who joined or left part-way through the year, plus any carried-over days that are still valid on the run date. A request that fits the remaining balance is approved and one that doesn't is cleanly rejected, with the balance updated to match.
+
+## Phase 2 — The Full Rulebook
+By the end of this phase, the job handles the situations a real HR period throws at it, not just the simple case. It treats each kind of absence correctly — ordinary vacation draws down the balance, unpaid and special leave are recorded without touching it, and sickness never costs vacation. It honours the rule that illness during an approved holiday gives those days back, refuses requests that clash with leave already granted, and correctly ignores cancelled bookings. The operator can run a realistic mixed period and see every type of request resolved the way the policy intends.
+
+## Phase 3 — Safe to Re-Run and Operate
+By the end of this phase, the job is something an operator can schedule and rely on. Running it more than once — after a retry, an interruption, or a second period close — never double-files a decision with the HR system and never deducts the same days twice. A failure partway through leaves completed work intact so a re-run simply finishes the rest, and bad or missing data for one employee is reported rather than allowed to abort the whole run. After each run the operator gets a clear summary of what was approved, rejected, and skipped.
+
+## Phase 4 — Confidence and Handover
+By the end of this phase, the behaviour of the job is pinned down and explainable. Every policy rule and edge case is backed by a test that demonstrates it, so changes can be made without fear of silently breaking a decision, and the open policy questions and the assumptions taken in their absence are documented so a reviewer or product owner can confirm or correct them. The result is a job whose decisions can be defended and whose reasoning is transparent.
+
+## Engineering Standards (all phases)
+Every phase is built to the conventions in `TECH_RULES.md`, so that what is delivered is not only correct but maintainable and safe to evolve. Application behaviour is expressed as explicit commands and queries rather than ad-hoc calls, data moves between layers as well-defined objects rather than loose arrays, write-side database access is reached through repository abstractions while reads are served by dedicated query handlers — so any layer can be tested or replaced in isolation. Services are defined behind interfaces, input is validated at the point it enters the system, and failures are logged with enough context to diagnose them. The practical outcome is a codebase a reviewer can trust as readily as the decisions it produces: each phase's features arrive on a consistent, well-structured foundation rather than accreting shortcuts.
+
+## Out of Scope (for now)
+Reconstructing or re-deriving opening balances from full historical request data is out of scope — the job trusts the balance it is given as the starting point. Enforcing a cap on special-leave entitlement is deferred, since no such allowance is tracked today. Support is limited to the regions and the single leave year represented in the sample period; broader regional coverage, multi-year handling, and six-day-week schedules are not addressed yet. Anything depending on unanswered policy questions proceeds on a documented default rather than expanding scope.
