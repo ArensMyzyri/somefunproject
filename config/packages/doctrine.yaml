@@ -4,6 +4,9 @@ doctrine:
         # The test environment overrides this with a local SQLite file (see when@test).
         url: '%env(resolve:DATABASE_URL)%'
         profiling_collect_backtrace: '%kernel.debug%'
+        # The Messenger transport owns its own table; keep it out of ORM schema
+        # introspection so migrations:diff and schema:validate ignore it.
+        schema_filter: ~^(?!messenger_messages)~
     orm:
         validate_xml_mapping: true
         naming_strategy: doctrine.orm.naming_strategy.underscore
